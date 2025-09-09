@@ -1,4 +1,5 @@
-import { User } from "../../types/User";
+import React from 'react';
+import { User } from '../../types/User';
 
 interface UserInfoProps {
   user: User;

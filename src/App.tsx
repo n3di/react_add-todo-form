@@ -1,4 +1,3 @@
-// App.tsx
 import React, { useState } from 'react';
 import './App.scss';
 import { Todo } from './types/Todo';
@@ -9,10 +8,16 @@ import usersFromServer from './api/users';
 export const App = () => {
   const userMap = new Map(usersFromServer.map(u => [u.id, u]));
 
-  const initialTodos: Todo[] = todosFromServer.map(todo => ({
-    ...todo,
-    user: userMap.get(todo.userId)!,
-  }));
+  const initialTodos: Todo[] = todosFromServer
+    .map(todo => {
+      const user = userMap.get(todo.userId);
+      if (!user) return null;
+      return {
+        ...todo,
+        user,
+      };
+    })
+    .filter((todo): todo is Todo => todo !== null);
 
   const [todos, setTodos] = useState<Todo[]>(initialTodos);
   const [title, setTitle] = useState('');
@@ -20,33 +25,54 @@ export const App = () => {
   const [titleError, setTitleError] = useState(false);
   const [userError, setUserError] = useState(false);
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // opcjonalnie: filtr tylko litery i cyfry
-    const cleaned = e.target.value.replace(/[^a-zA-Z0-9\s]/g, '');
+  const handleTitleChange = (
+    changeEvent: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const cleaned = changeEvent.target.value.replace(
+      /[^a-zA-Z\u0400-\u04FF0-9\s]/g,
+      '',
+    );
+
     setTitle(cleaned);
-    if (titleError) setTitleError(false);
+    if (titleError) {
+      setTitleError(false);
+    }
   };
 
-  const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedUserId(Number(e.target.value));
-    if (userError) setUserError(false);
+  const handleUserChange = (
+    selectEvent: React.ChangeEvent<HTMLSelectElement>,
+  ) => {
+    const value = selectEvent.target.value;
+    setSelectedUserId(value === '' ? '' : Number(value));
+    if (userError) {
+      setUserError(false);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (submitEvent: React.FormEvent) => {
+    submitEvent.preventDefault();
     let valid = true;
+
     if (!title.trim()) {
       setTitleError(true);
       valid = false;
     }
+
     if (!selectedUserId) {
       setUserError(true);
       valid = false;
     }
-    if (!valid) return;
+
+    if (!valid) {
+      return;
+    }
 
     const newId = todos.length ? Math.max(...todos.map(t => t.id)) + 1 : 1;
-    const user = usersFromServer.find(u => u.id === selectedUserId)!;
+    const user = usersFromServer.find(u => u.id === Number(selectedUserId));
+
+    if (!user) {
+      return;
+    }
 
     const newTodo: Todo = {
       id: newId,
@@ -66,7 +92,9 @@ export const App = () => {
       <h1>Add todo form</h1>
       <form onSubmit={handleSubmit}>
         <div className="field">
+          <label htmlFor="title">Title</label>
           <input
+            id="title"
             type="text"
             data-cy="titleInput"
             value={title}
@@ -77,7 +105,9 @@ export const App = () => {
         </div>
 
         <div className="field">
+          <label htmlFor="user">User</label>
           <select
+            id="user"
             data-cy="userSelect"
             value={selectedUserId}
             onChange={handleUserChange}
