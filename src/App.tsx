@@ -11,7 +11,11 @@ export const App = () => {
   const initialTodos: Todo[] = todosFromServer
     .map(todo => {
       const user = userMap.get(todo.userId);
-      if (!user) return null;
+
+      if (!user) {
+        return null;
+      }
+
       return {
         ...todo,
         user,
@@ -34,7 +38,7 @@ export const App = () => {
     );
 
     setTitle(cleaned);
-    if (titleError) {
+    if (titleError && cleaned.trim() !== '') {
       setTitleError(false);
     }
   };
@@ -43,8 +47,9 @@ export const App = () => {
     selectEvent: React.ChangeEvent<HTMLSelectElement>,
   ) => {
     const value = selectEvent.target.value;
+
     setSelectedUserId(value === '' ? '' : Number(value));
-    if (userError) {
+    if (userError && value !== '') {
       setUserError(false);
     }
   };
@@ -68,7 +73,8 @@ export const App = () => {
     }
 
     const newId = todos.length ? Math.max(...todos.map(t => t.id)) + 1 : 1;
-    const user = usersFromServer.find(u => u.id === Number(selectedUserId));
+    const user = userMap.get(Number(selectedUserId));
+    if (!user) return;
 
     if (!user) {
       return;
@@ -85,6 +91,8 @@ export const App = () => {
     setTodos([...todos, newTodo]);
     setTitle('');
     setSelectedUserId('');
+    setTitleError(false);
+    setUserError(false);
   };
 
   return (

@@ -7,3 +7,7 @@ export interface Todo {
   completed: boolean;
   user: User;
 }
+
+export interface TodoListProps {
+  todos?: Todo[];
+}
